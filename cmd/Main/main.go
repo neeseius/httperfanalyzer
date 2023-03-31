@@ -13,6 +13,8 @@ var (
 	method         string
 	requestBody    string
 	requestTimeout int
+	keepAlive      bool
+	delayMS        int
 )
 
 func init() {
@@ -30,11 +32,14 @@ func init() {
 		"data", "", "Optionally send a payload body")
 	flag.IntVar(&requestTimeout,
 		"timeout", 10, "request timeout in seconds")
+	flag.BoolVar(&keepAlive,
+		"keepAlive", true, "reuse connections")
+	flag.IntVar(&delayMS, "delay", 0, "time to wait in ms between requests")
 
 	flag.Parse()
 }
 
 func main() {
 	client.Stress(
-		url, method, requestBody, headers, RequestsToSend, maxConnections, requestTimeout)
+		url, method, requestBody, headers, RequestsToSend, maxConnections, requestTimeout, keepAlive, delayMS)
 }

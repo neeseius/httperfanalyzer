@@ -21,6 +21,7 @@ var (
 	requestHeaders map[string]string
 	Method         string
 	URL            string
+	delay          time.Duration
 	stats          *Stats
 )
 
@@ -105,7 +106,6 @@ func (s *Stats) TakeRequest() bool {
 	}
 
 	s.RequestsTaken++
-
 	return true
 }
 
@@ -201,10 +201,14 @@ func requestWorker(n int, ctx context.Context, wg *sync.WaitGroup) {
 		resp.Body.Close()
 
 		stats.UpdateRcCount(resp.StatusCode, reqDuration.Milliseconds())
+
+		if delay != 0 {
+			time.Sleep(delay)
+		}
 	}
 }
 
-func Stress(url, method, reqBody, headers string, count, maxConnections, timeout int) {
+func Stress(url, method, reqBody, headers string, count, maxConnections, timeout int, keepAlive bool, delayMS int) {
 	if url == "" {
 		fmt.Println("-url must be specified")
 		os.Exit(1)
@@ -221,11 +225,17 @@ func Stress(url, method, reqBody, headers string, count, maxConnections, timeout
 		requestHeaders = getRequestHeaders(headers)
 	}
 
+	delay = time.Millisecond * time.Duration(delayMS)
+
 	transport := *http.DefaultTransport.(*http.Transport)
 	transport.MaxIdleConns = maxConnections
 	transport.MaxIdleConnsPerHost = maxConnections
 	transport.MaxConnsPerHost = maxConnections
-	client = &http.Client{Transport: &transport, Timeout: time.Duration(timeout) * time.Second}
+	transport.DisableKeepAlives = !keepAlive
+
+	client = &http.Client{
+		Transport: &transport,
+		Timeout:   time.Duration(timeout) * time.Second}
 
 	stats = &Stats{
 		Lock:              &sync.Mutex{},
@@ -246,7 +256,7 @@ func Stress(url, method, reqBody, headers string, count, maxConnections, timeout
 	signal.Notify(sigs, syscall.SIGTERM)
 
 	go func(cancel context.CancelFunc) {
-		_ = <-sigs
+		<-sigs
 		stats.Complete = true
 		cancel()
 	}(cancel)
