@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -208,7 +209,7 @@ func requestWorker(n int, ctx context.Context, wg *sync.WaitGroup) {
 	}
 }
 
-func Stress(url, method, reqBody, headers string, count, maxConnections, timeout int, keepAlive bool, delayMS int) {
+func Stress(url, method, reqBody, headers string, count, maxConnections, timeout int, tlsVerify, keepAlive bool, delayMS int) {
 	if url == "" {
 		fmt.Println("-url must be specified")
 		os.Exit(1)
@@ -232,6 +233,10 @@ func Stress(url, method, reqBody, headers string, count, maxConnections, timeout
 	transport.MaxIdleConnsPerHost = maxConnections
 	transport.MaxConnsPerHost = maxConnections
 	transport.DisableKeepAlives = !keepAlive
+
+	if !tlsVerify {
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
 
 	client = &http.Client{
 		Transport: &transport,

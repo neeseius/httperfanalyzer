@@ -13,6 +13,7 @@ var (
 	method         string
 	requestBody    string
 	requestTimeout int
+	tlsVerify      bool
 	keepAlive      bool
 	delayMS        int
 )
@@ -32,6 +33,8 @@ func init() {
 		"data", "", "Optionally send a payload body")
 	flag.IntVar(&requestTimeout,
 		"timeout", 10, "request timeout in seconds")
+	flag.BoolVar(&tlsVerify,
+		"tlsVerify", true, "verify tls certificate")
 	flag.BoolVar(&keepAlive,
 		"keepAlive", true, "reuse connections")
 	flag.IntVar(&delayMS, "delay", 0, "time to wait in ms between requests")
@@ -41,5 +44,5 @@ func init() {
 
 func main() {
 	client.Stress(
-		url, method, requestBody, headers, RequestsToSend, maxConnections, requestTimeout, keepAlive, delayMS)
+		url, method, requestBody, headers, RequestsToSend, maxConnections, requestTimeout, tlsVerify, keepAlive, delayMS)
 }
